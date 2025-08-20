@@ -8,3 +8,5 @@ pyhanko-certvalidator==0.26.3
 weasyprint==62.3
 pyotp==2.9.0
 python-multipart==0.0.9
+pypdf
+reportlab

@@ -1,260 +1,380 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>E-Contract Demo</title>
+  <meta charset="UTF-8" />
+  <title>E-Contract Demo (Multi-party & Stamping)</title>
   <style>
-    body { font-family: sans-serif; max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
-    .container { display: flex; gap: 2rem; }
-    .left-panel { flex: 1; }
-    .right-panel { flex: 1; }
-    .section { margin-bottom: 2rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; }
-    .preview-container { width: 100%; height: 600px; border: 1px solid #ccc; }
-    textarea { width: 100%; box-sizing: border-box; }
-    input[type="text"], input[type="file"] { width: 300px; padding: 0.5rem; }
-    button { padding: 0.5rem 1rem; margin: 0.5rem 0; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    button:hover { background: #0056b3; }
-    .upload-section { border-color: #28a745; }
-    .create-section { border-color: #007bff; }
-    .sign-section { border-color: #ffc107; }
+    :root { --blue:#007bff; --green:#28a745; --amber:#ffc107; --slate:#6c757d; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 1280px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { margin-bottom: 1rem; }
+    .container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .section { margin-bottom: 2rem; padding: 1rem; border: 1px solid #eee; border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+    .section h2 { margin-top: 0; }
+    .upload-section { border-color: var(--green); }
+    .create-section { border-color: var(--blue); }
+    .sign-section { border-color: var(--amber); }
+    .verify-section { border-color: #999; }
+    .row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+    .row > * { margin: .25rem 0; }
+    label { font-weight: 600; color: #333; }
+    input[type="text"], input[type="number"], input[type="file"], select, textarea { padding: .55rem .6rem; border: 1px solid #ddd; border-radius: 8px; }
+    textarea { width: 100%; min-height: 300px; box-sizing: border-box; }
+    input[type="text"], input[type="number"] { width: 280px; }
+    input.small { width: 120px; }
+    button { padding: .6rem 1rem; border: none; border-radius: 8px; cursor: pointer; background: var(--blue); color: white; font-weight: 600; }
+    button.secondary { background: #555; }
+    button.green { background: var(--green); }
+    button.amber { background: #d58512; }
+    button.gray { background: #888; }
+    button:hover { filter: brightness(.95); }
+    .hint { color: var(--slate); font-size: .9rem; }
+    .preview-container { width: 100%; height: 700px; border: 1px solid #ddd; border-radius: 10px; }
+    .placeholder { display: flex; align-items: center; justify-content: center; background: #f8f9fa; color: var(--slate); }
+    .pill { display:inline-block; padding:.15rem .5rem; border-radius: 999px; font-size:.85rem; background:#eef2ff; color:#3740a5; border:1px solid #dfe3ff; }
+    .muted { color: #777; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem 1rem; }
+    .kv { display:flex; justify-content: space-between; border-bottom:1px dashed #eee; padding:.3rem 0; }
+    .kv b { color:#222 }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    .divider { height:1px; background:#eee; margin:1rem 0; }
   </style>
 </head>
 <body>
-  <h1>E-Contract Demo</h1>
+  <h1>E-Contract Demo <span class="pill">Multi-party · Stamping · Preview</span></h1>
 
   <div class="container">
-    <div class="left-panel">
-      <!-- Upload PDF Section -->
+    <div>
+      <!-- Upload PDF -->
       <div class="section upload-section">
         <h2>📁 Upload Existing PDF</h2>
         <form id="uploadForm" enctype="multipart/form-data">
-          <label>Title</label><br/>
-          <input type="text" name="title" placeholder="my-document" required/><br/><br/>
-          <label>PDF File</label><br/>
-          <input type="file" name="file" accept=".pdf" required/><br/><br/>
-          <button type="submit">Upload PDF</button>
+          <div class="row">
+            <label>Title</label>
+            <input type="text" name="title" placeholder="my-document" required />
+          </div>
+          <div class="row">
+            <label>PDF File</label>
+            <input type="file" name="file" accept=".pdf" required />
+          </div>
+          <button type="submit" class="green">Upload PDF</button>
         </form>
-        <div id="uploadResult"></div>
+        <div id="uploadResult" class="hint"></div>
       </div>
 
-      <!-- Create New PDF Section -->
+      <!-- Create New PDF -->
       <div class="section create-section">
         <h2>📝 Create Contract (HTML → PDF)</h2>
         <form id="createForm">
-          <label>Title</label><br/>
-          <input type="text" name="title" placeholder="sample" required/><br/><br/>
-          <label>HTML Content</label><br/>
-          <textarea id="htmlContent" name="body_html" rows="25" placeholder="Enter HTML content here..."><h1>Sample Contract</h1>
+          <div class="row">
+            <label>Title</label>
+            <input type="text" name="title" placeholder="sample" required />
+          </div>
+          <label>HTML Content</label>
+          <textarea id="htmlContent" name="body_html" placeholder="Enter HTML content here..."><h1>Sample Contract</h1>
 <p>This is a sample contract body.</p>
 <h2>Terms and Conditions</h2>
 <ul>
   <li>Term 1: Sample term</li>
   <li>Term 2: Another term</li>
 </ul>
-<p><strong>Signature:</strong> ___________________</p></textarea><br/>
-          <button type="button" id="previewBtn">🔍 Preview PDF</button>
-          <button type="submit">📄 Create PDF</button>
+<p><strong>Signature:</strong> ___________________</p></textarea>
+          <div class="row">
+            <button type="button" id="previewBtn">🔍 Preview PDF</button>
+            <button type="submit">📄 Create PDF</button>
+          </div>
         </form>
-        <div id="createResult"></div>
+        <div id="createResult" class="hint"></div>
       </div>
 
-      <!-- Sign Section -->
+      <!-- Multi-party Sign -->
       <div class="section sign-section">
-        <h2>✍️ Sign Document</h2>
-        <div>
-          <label>Document Title:</label>
-          <input type="text" id="signTitle" placeholder="sample" required/>
+        <h2>✍️ Multi-party Sign & Stamp</h2>
+
+        <div class="row">
+          <label>Document Title</label>
+          <input type="text" id="signTitle" placeholder="sample" required />
         </div>
-        <div style="margin: 1rem 0;">
-          <button id="requestOtpBtn">📱 Request OTP</button>
-          <div id="otpResult"></div>
+
+        <div class="row">
+          <label>Signer</label>
+          <select id="signParty">
+            <option value="partyA">Party A (first signer · DocMDP)</option>
+            <option value="partyB">Party B (subsequent signer)</option>
+          </select>
         </div>
-        <div>
-          <input type="text" id="otpInput" placeholder="Enter OTP"/>
-          <button id="signBtn">✍️ Sign Document</button>
+
+        <details style="margin:.5rem 0 1rem">
+          <summary>🖼️ Stamp (optional)</summary>
+          <div class="grid-2" style="margin-top:.5rem">
+            <div>
+              <label>Stamp Image</label><br/>
+              <input type="file" id="stampFile" accept="image/*" />
+              <div class="hint">PNG với nền trong suốt là đẹp nhất.</div>
+            </div>
+            <div>
+              <label>Page</label><br/>
+              <input class="small" type="number" id="stampPage" value="-1" />
+              <div class="hint">-1 = last page</div>
+            </div>
+            <div>
+              <label>X</label><br/>
+              <input class="small" type="number" id="stampX" value="450" />
+            </div>
+            <div>
+              <label>Y</label><br/>
+              <input class="small" type="number" id="stampY" value="40" />
+            </div>
+            <div>
+              <label>Width</label><br/>
+              <input class="small" type="number" id="stampW" value="120" />
+            </div>
+            <div>
+              <label>Height</label><br/>
+              <input class="small" type="number" id="stampH" value="120" />
+            </div>
+          </div>
+        </details>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <button id="requestOtpBtn" class="amber">📱 Request OTP</button>
+          <span id="otpResult" class="hint"></span>
         </div>
-        <div id="signResult"></div>
+        <div class="row">
+          <input type="text" id="otpInput" placeholder="Enter OTP" />
+          <button id="signBtn">✍️ Sign</button>
+        </div>
+
+        <div class="row" style="margin-top:.5rem">
+          <button id="listSigBtn" class="secondary">🧾 List signatures</button>
+          <span id="signaturesList" class="hint"></span>
+        </div>
+
+        <div id="signResult" class="hint" style="margin-top:.5rem"></div>
       </div>
 
-      <!-- Verify Section -->
-      <div class="section">
+      <!-- Verify -->
+      <div class="section verify-section">
         <h2>🔍 Verify Signature</h2>
-        <input type="text" id="verifyTitle" placeholder="sample"/>
-        <button id="verifyBtn">Verify</button>
-        <div id="verifyResult"></div>
+        <div class="row">
+          <input type="text" id="verifyTitle" placeholder="sample" />
+          <button id="verifyBtn" class="gray">Verify</button>
+        </div>
+        <div id="verifyResult" style="margin-top: .5rem"></div>
       </div>
     </div>
 
-    <div class="right-panel">
+    <div>
+      <!-- Right: Preview -->
       <div class="section">
         <h2>📄 PDF Preview</h2>
-        <iframe id="pdfPreview" class="preview-container" style="display: none;"></iframe>
-        <div id="previewPlaceholder" class="preview-container" style="display: flex; align-items: center; justify-content: center; background: #f8f9fa; color: #6c757d;">
+        <iframe id="pdfPreview" class="preview-container" style="display:none;"></iframe>
+        <div id="previewPlaceholder" class="preview-container placeholder">
           Click "Preview PDF" to see your document here
         </div>
+        <div id="currentFileInfo" class="hint" style="margin-top:.5rem"></div>
+      </div>
+
+      <!-- Helper / Info -->
+      <div class="section">
+        <h2>ℹ️ Tips</h2>
+        <ul class="hint">
+          <li>Mỗi lần ký là một <b>incremental update</b>; chữ ký trước vẫn hợp lệ.</li>
+          <li>Chữ ký đầu tiên nên là <b>DocMDP (P=2)</b> để cho phép thêm chữ ký sau.</li>
+          <li>Stamp chỉ có hiệu lực nếu <b>overlay + ký trong cùng một lần</b>.</li>
+        </ul>
       </div>
     </div>
   </div>
 
   <script>
-    // Auto-preview functionality
+    // === Preview (auto & on demand) ===
     let previewTimeout;
-    document.getElementById('htmlContent').addEventListener('input', function() {
-      clearTimeout(previewTimeout);
-      previewTimeout = setTimeout(updatePreview, 1000); // Auto-preview after 1 second of no typing
-    });
-
+    const htmlEl = document.getElementById('htmlContent');
+    if (htmlEl) {
+      htmlEl.addEventListener('input', () => {
+        clearTimeout(previewTimeout);
+        previewTimeout = setTimeout(updatePreview, 800);
+      });
+    }
     document.getElementById('previewBtn').addEventListener('click', updatePreview);
 
     async function updatePreview() {
       const htmlContent = document.getElementById('htmlContent').value;
       if (!htmlContent.trim()) return;
-
       try {
-        const formData = new FormData();
-        formData.append('body_html', htmlContent);
+        const fd = new FormData();
+        fd.append('body_html', htmlContent);
 
-        const response = await fetch('/contracts/preview', {
-          method: 'POST',
-          body: formData
-        });
+        const res = await fetch('/contracts/preview', { method: 'POST', body: fd });
+        if (!res.ok) throw new Error(res.statusText);
+        const result = await res.json();
 
-        if (response.ok) {
-          const result = await response.json();
-          const pdfPreview = document.getElementById('pdfPreview');
-          const placeholder = document.getElementById('previewPlaceholder');
-
-          pdfPreview.src = 'data:application/pdf;base64,' + result.pdf_base64;
-          pdfPreview.style.display = 'block';
-          placeholder.style.display = 'none';
-        } else {
-          console.error('Preview failed:', response.statusText);
-        }
-      } catch (error) {
-        console.error('Preview error:', error);
+        const pdfPreview = document.getElementById('pdfPreview');
+        const placeholder = document.getElementById('previewPlaceholder');
+        pdfPreview.src = 'data:application/pdf;base64,' + result.pdf_base64;
+        pdfPreview.style.display = 'block';
+        placeholder.style.display = 'none';
+      } catch (err) {
+        console.error('Preview error:', err);
       }
     }
 
-    // Upload form handler
-    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+    // === Upload ===
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const formData = new FormData(this);
-
+      const fd = new FormData(e.target);
       try {
-        const response = await fetch('/contracts/upload', {
-          method: 'POST',
-          body: formData
-        });
-
-        const result = await response.json();
-        document.getElementById('uploadResult').innerHTML = response.ok
-          ? `<p style="color: green;">✅ Uploaded: ${result.title}</p>`
-          : `<p style="color: red;">❌ Error: ${result.detail}</p>`;
-      } catch (error) {
-        document.getElementById('uploadResult').innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+        const res = await fetch('/contracts/upload', { method: 'POST', body: fd });
+        const result = await res.json();
+        document.getElementById('uploadResult').innerHTML = res.ok
+          ? `✅ Uploaded: <b>${result.title}</b>`
+          : `❌ Error: ${result.detail || res.statusText}`;
+        if (res.ok) setCurrentFileInfo(result);
+      } catch (err) {
+        document.getElementById('uploadResult').innerHTML = `❌ Error: ${err.message}`;
       }
     });
 
-    // Create form handler
-    document.getElementById('createForm').addEventListener('submit', async function(e) {
+    // === Create ===
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const formData = new FormData(this);
-
+      const fd = new FormData(e.target);
       try {
-        const response = await fetch('/contracts/create', {
-          method: 'POST',
-          body: formData
-        });
-
-        const result = await response.json();
-        document.getElementById('createResult').innerHTML = response.ok
-          ? `<p style="color: green;">✅ Created: ${result.title}</p>`
-          : `<p style="color: red;">❌ Error: ${result.detail}</p>`;
-      } catch (error) {
-        document.getElementById('createResult').innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+        const res = await fetch('/contracts/create', { method: 'POST', body: fd });
+        const result = await res.json();
+        document.getElementById('createResult').innerHTML = res.ok
+          ? `✅ Created: <b>${result.title}</b>`
+          : `❌ Error: ${result.detail || res.statusText}`;
+        if (res.ok) setCurrentFileInfo(result);
+      } catch (err) {
+        document.getElementById('createResult').innerHTML = `❌ Error: ${err.message}`;
       }
     });
 
-    // Request OTP handler
-    document.getElementById('requestOtpBtn').addEventListener('click', async function() {
-      const title = document.getElementById('signTitle').value;
-      if (!title) {
-        alert('Please enter document title');
-        return;
-      }
+    // === OTP ===
+    document.getElementById('requestOtpBtn').addEventListener('click', async () => {
+      const title = document.getElementById('signTitle').value.trim();
+      const party = document.getElementById('signParty').value;
+      if (!title) return alert('Please enter document title');
 
       try {
-        const response = await fetch(`/contracts/${title}/request-otp`, {
-          method: 'POST'
-        });
-
-        const result = await response.json();
-        document.getElementById('otpResult').innerHTML = response.ok
-          ? `<p style="color: green;">✅ ${result.message}</p>`
-          : `<p style="color: red;">❌ Error: ${result.detail}</p>`;
-      } catch (error) {
-        document.getElementById('otpResult').innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+        const res = await fetch(`/contracts/${encodeURIComponent(title)}/request-otp/${party}`, { method: 'POST' });
+        const result = await res.json();
+        document.getElementById('otpResult').innerHTML = res.ok
+          ? `✅ ${result.message}`
+          : `❌ Error: ${result.detail || res.statusText}`;
+      } catch (err) {
+        document.getElementById('otpResult').innerHTML = `❌ Error: ${err.message}`;
       }
     });
 
-    // Sign document handler
-    document.getElementById('signBtn').addEventListener('click', async function() {
-      const title = document.getElementById('signTitle').value;
-      const otp = document.getElementById('otpInput').value;
+    // === Sign (with optional stamping) ===
+    document.getElementById('signBtn').addEventListener('click', async () => {
+      const title = document.getElementById('signTitle').value.trim();
+      const party = document.getElementById('signParty').value;
+      const otp = document.getElementById('otpInput').value.trim();
+      if (!title || !otp) return alert('Please enter both title and OTP');
 
-      if (!title || !otp) {
-        alert('Please enter both title and OTP');
-        return;
-      }
+      const fd = new FormData();
+      fd.append('otp', otp);
+
+      // optional stamp params (your backend should accept these)
+      const stampFile = document.getElementById('stampFile').files?.[0];
+      const page = document.getElementById('stampPage').value || '-1';
+      const x = document.getElementById('stampX').value || '450';
+      const y = document.getElementById('stampY').value || '40';
+      const w = document.getElementById('stampW').value || '120';
+      const h = document.getElementById('stampH').value || '120';
+
+      fd.append('stamp_page', page);
+      fd.append('stamp_x', x);
+      fd.append('stamp_y', y);
+      fd.append('stamp_w', w);
+      fd.append('stamp_h', h);
+      if (stampFile) fd.append('stamp_image', stampFile);
 
       try {
-        const formData = new FormData();
-        formData.append('otp', otp);
-
-        const response = await fetch(`/contracts/${title}/sign`, {
-          method: 'POST',
-          body: formData
-        });
-
-        const result = await response.json();
-        document.getElementById('signResult').innerHTML = response.ok
-          ? `<p style="color: green;">✅ Signed: ${result.title}</p>`
-          : `<p style="color: red;">❌ Error: ${result.detail}</p>`;
-      } catch (error) {
-        document.getElementById('signResult').innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+        const res = await fetch(`/contracts/${encodeURIComponent(title)}/sign/${party}`, { method: 'POST', body: fd });
+        const result = await res.json();
+        document.getElementById('signResult').innerHTML = res.ok
+          ? `✅ Signed: <b>${result.title || title}</b> — Signatures: <span class="mono">${(result.signatures||[]).join(', ')}</span>`
+          : `❌ Error: ${result.detail || res.statusText}`;
+        if (res.ok) setCurrentFileInfo({title, signed_pdf: result.signed_pdf});
+      } catch (err) {
+        document.getElementById('signResult').innerHTML = `❌ Error: ${err.message}`;
       }
     });
 
-    // Verify signature handler
-    document.getElementById('verifyBtn').addEventListener('click', async function() {
-      const title = document.getElementById('verifyTitle').value;
-      if (!title) {
-        alert('Please enter document title');
-        return;
+    // === List signatures (optional endpoint /contracts/:title/signatures) ===
+    document.getElementById('listSigBtn').addEventListener('click', async () => {
+      const title = document.getElementById('signTitle').value.trim();
+      if (!title) return alert('Please enter document title');
+      try {
+        // if you don't have /signatures, you can call /verify and read fields there
+        const res = await fetch(`/contracts/${encodeURIComponent(title)}/verify`);
+        const result = await res.json();
+        const fields = result.fields || result.signature_fields || [];
+        document.getElementById('signaturesList').innerHTML =
+          fields.length ? `Fields: <span class="mono">${fields.join(', ')}</span>` : 'No signature fields.';
+      } catch (err) {
+        document.getElementById('signaturesList').innerHTML = `❌ Error: ${err.message}`;
       }
+    });
+
+    // === Verify ===
+    document.getElementById('verifyBtn').addEventListener('click', async () => {
+      const title = document.getElementById('verifyTitle').value.trim();
+      if (!title) return alert('Please enter document title');
 
       try {
-        const response = await fetch(`/contracts/${title}/verify`);
-        const result = await response.json();
+        const res = await fetch(`/contracts/${encodeURIComponent(title)}/verify`);
+        const result = await res.json();
 
-        if (response.ok) {
-          document.getElementById('verifyResult').innerHTML = `
-            <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-top: 1rem;">
-              <p><strong>Valid:</strong> ${result.valid ? '✅ Yes' : '❌ No'}</p>
-              <p><strong>Trusted:</strong> ${result.trusted ? '✅ Yes' : '❌ No'}</p>
-              <p><strong>Field:</strong> ${result.field_name}</p>
-              <p><strong>Summary:</strong> ${result.summary}</p>
-            </div>
-          `;
-        } else {
-          document.getElementById('verifyResult').innerHTML = `<p style="color: red;">❌ Error: ${result.detail}</p>`;
+        if (!res.ok) {
+          document.getElementById('verifyResult').innerHTML = `<p style="color:red">❌ Error: ${result.detail || res.statusText}</p>`;
+          return;
         }
-      } catch (error) {
-        document.getElementById('verifyResult').innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+
+        // Normalize possible shapes of backend response
+        const fields = result.fields || result.signature_fields || [];
+        const report = result.report || result;
+        const valid = report.intact ?? report.valid ?? false;
+        const signer = report.signer_subject || report.signer || '—';
+        const when = report.signing_time || report.signed_at || '—';
+        const docmdp = result.docmdp_perm || report.docmdp_perm || '—';
+
+        document.getElementById('verifyResult').innerHTML = `
+          <div style="background:#f8f9fa; padding:1rem; border-radius:10px">
+            <div class="grid-2">
+              <div class="kv"><b>Valid</b><span>${valid ? '✅ Yes' : '❌ No'}</span></div>
+              <div class="kv"><b>DocMDP (P)</b><span>${docmdp}</span></div>
+              <div class="kv"><b>Signer (last)</b><span>${escapeHtml(signer)}</span></div>
+              <div class="kv"><b>Signing time</b><span>${escapeHtml(when)}</span></div>
+              <div class="kv"><b>Signature fields</b><span class="mono">${fields.join(', ') || 'None'}</span></div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        document.getElementById('verifyResult').innerHTML = `<p style="color:red">❌ Error: ${err.message}</p>`;
       }
     });
 
-    // Initial preview
+    // === Helpers ===
+    function setCurrentFileInfo(obj) {
+      const el = document.getElementById('currentFileInfo');
+      const parts = [];
+      if (obj.pdf) parts.push(`Draft PDF: <span class="mono">${obj.pdf}</span>`);
+      if (obj.signed_pdf) parts.push(`Signed PDF: <span class="mono">${obj.signed_pdf}</span>`);
+      if (obj.title) parts.push(`Title: <b>${escapeHtml(obj.title)}</b>`);
+      el.innerHTML = parts.join(' · ') || '';
+    }
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    // Initial preview kick
     updatePreview();
   </script>
 </body>
