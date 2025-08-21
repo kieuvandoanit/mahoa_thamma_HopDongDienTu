@@ -45,21 +45,21 @@
   <div class="container">
     <div>
       <!-- Upload PDF -->
-      <div class="section upload-section">
-        <h2>📁 Upload Existing PDF</h2>
-        <form id="uploadForm" enctype="multipart/form-data">
-          <div class="row">
-            <label>Title</label>
-            <input type="text" name="title" placeholder="my-document" required />
-          </div>
-          <div class="row">
-            <label>PDF File</label>
-            <input type="file" name="file" accept=".pdf" required />
-          </div>
-          <button type="submit" class="green">Upload PDF</button>
-        </form>
-        <div id="uploadResult" class="hint"></div>
-      </div>
+<!--      <div class="section upload-section">-->
+<!--        <h2>📁 Upload Existing PDF</h2>-->
+<!--        <form id="uploadForm" enctype="multipart/form-data">-->
+<!--          <div class="row">-->
+<!--            <label>Title</label>-->
+<!--            <input type="text" name="title" placeholder="my-document" required />-->
+<!--          </div>-->
+<!--          <div class="row">-->
+<!--            <label>PDF File</label>-->
+<!--            <input type="file" name="file" accept=".pdf" required />-->
+<!--          </div>-->
+<!--          <button type="submit" class="green">Upload PDF</button>-->
+<!--        </form>-->
+<!--        <div id="uploadResult" class="hint"></div>-->
+<!--      </div>-->
 
       <!-- Create New PDF -->
       <div class="section create-section">
@@ -222,20 +222,20 @@
     }
 
     // === Upload ===
-    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      try {
-        const res = await fetch('/contracts/upload', { method: 'POST', body: fd });
-        const result = await res.json();
-        document.getElementById('uploadResult').innerHTML = res.ok
-          ? `✅ Uploaded: <b>${result.title}</b>`
-          : `❌ Error: ${result.detail || res.statusText}`;
-        if (res.ok) setCurrentFileInfo(result);
-      } catch (err) {
-        document.getElementById('uploadResult').innerHTML = `❌ Error: ${err.message}`;
-      }
-    });
+    // document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+    //   e.preventDefault();
+    //   const fd = new FormData(e.target);
+    //   try {
+    //     const res = await fetch('/contracts/upload', { method: 'POST', body: fd });
+    //     const result = await res.json();
+    //     document.getElementById('uploadResult').innerHTML = res.ok
+    //       ? `✅ Uploaded: <b>${result.title}</b>`
+    //       : `❌ Error: ${result.detail || res.statusText}`;
+    //     if (res.ok) setCurrentFileInfo(result);
+    //   } catch (err) {
+    //     document.getElementById('uploadResult').innerHTML = `❌ Error: ${err.message}`;
+    //   }
+    // });
 
     // === Create ===
     document.getElementById('createForm').addEventListener('submit', async (e) => {

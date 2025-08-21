@@ -10,6 +10,10 @@ from cryptography.hazmat.primitives.serialization import NoEncryption
 CA_DIR = Path("storage/ca"); CA_DIR.mkdir(parents=True, exist_ok=True)
 
 def create_or_load_root_ca():
+    """
+    Create or load the root CA key and certificate.
+    If they already exist, load them; otherwise, create a new CA.
+    """
     key_file = CA_DIR / "rootCA.key"
     cert_file = CA_DIR / "rootCA.pem"
     if key_file.exists() and cert_file.exists():
@@ -40,6 +44,9 @@ def create_or_load_root_ca():
     return key, cert
 
 def issue_user_cert(common_name: str, save_dir: Path):
+    """
+    Issue a user certificate signed by the root CA.
+    """
     save_dir.mkdir(parents=True, exist_ok=True)
     ca_key, ca_cert = create_or_load_root_ca()
     user_key = rsa.generate_private_key(public_exponent=65537, key_size=3072)
