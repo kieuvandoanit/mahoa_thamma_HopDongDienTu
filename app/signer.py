@@ -185,20 +185,6 @@ def list_pdf_signatures(pdf_path: Path):
             names.append(str(name))
         return sorted(set(names))
 
-# async def verify_pdf_signed_async(pdf_path: Path, ca_pem_path: Path):
-#     root = load_cert_from_pemder(str(ca_pem_path))
-#     vc = ValidationContext(trust_roots=[root], allow_fetching=False)
-#     with open(pdf_path, 'rb') as f:
-#         reader = HankoPdfReader(f)
-#         result = await async_validate_pdf_signature(reader, -1, vc)
-#     return {
-#         "intact": result.bottom_line.valid,
-#         "signer_subject": result.signer_reported_common_name,
-#         "signing_time": str(result.signing_time) if result.signing_time else None,
-#         "explanations": [str(e) for e in (result.pseudo_revinfo or [])]
-#     }
-
-
 async def verify_pdf_signed_async(pdf_path, ca_cert_path):
     # Load the CA certificate (not the key file)
     ca_cert = load_cert_from_pemder(ca_cert_path)

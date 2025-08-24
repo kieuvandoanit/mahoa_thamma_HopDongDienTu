@@ -44,9 +44,9 @@ def latest_pdf_for(title: str) -> Path:
     # Some name output file signed is:
     #   <title>-signed-A.pdf
     #   <title>-signed-A-B.pdf
-    candidates = sorted(SIGNED_DIR.glob(f"{title}-signed-*.pdf"))
+    candidates = [base] + sorted(SIGNED_DIR.glob(f"{title}-signed-*.pdf"))
     print(candidates)
-    return candidates[0]
+    return candidates[-1]
 
 # Helper
 def next_signed_path(title: str, who: str) -> Path:
