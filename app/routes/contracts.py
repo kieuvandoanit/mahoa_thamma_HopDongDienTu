@@ -110,20 +110,27 @@ async def sign_for_party(
     if not verify_otp(party, otp):
         raise HTTPException(status_code=400, detail="OTP invalid")
 
-    # 2) Define field & output
+    # 2) Define field
     field_name = "SignatureA" if party == "partyA" else "SignatureB"
     who_mark = "A" if party == "partyA" else "B"
 
     in_pdf = latest_pdf_for(title)
-    out_pdf = next_signed_path(title, who_mark)
 
     # 3) Count existing signatures
     existing_fields = list_pdf_signatures(in_pdf)
+    print("Existing fields:", existing_fields)
     already_signed = len(existing_fields) > 0
 
     # 3a) Mandatory A signature first
     if not already_signed and party == "partyB":
         raise HTTPException(status_code=400, detail="Party A must sign first (certification)")
+
+    # 3b) Prevent duplicate sign same party
+    if already_signed and party == "partyA":
+        raise HTTPException(status_code=400, detail="Party A already signed")
+
+    # Define output path
+    out_pdf = next_signed_path(title, who_mark)
 
     # 4) Read stamp bytes (optional)
     stamp_bytes = await stamp_image.read() if stamp_image is not None else None
@@ -171,14 +178,40 @@ async def sign_for_party(
     fields = list_pdf_signatures(out_pdf)
     return {"title": title, "signed_pdf": str(out_pdf), "signatures": fields}
 
+# @router.get("/{title}/verify")
+# async def verify(title: str):
+#     signed_pdf = latest_pdf_for(title)
+#     print(signed_pdf)
+#     report = await verify_pdf_signed_async(signed_pdf, Path("storage/ca/rootCA.pem"))
+#     fields = list_pdf_signatures(signed_pdf)
+#     return {"file": str(signed_pdf), "fields": fields, "report": report}
+
+
 @router.get("/{title}/verify")
 async def verify(title: str):
     signed_pdf = latest_pdf_for(title)
     print(signed_pdf)
-    report = await verify_pdf_signed_async(signed_pdf, Path("storage/ca/rootCA.pem"))
-    fields = list_pdf_signatures(signed_pdf)
-    return {"file": str(signed_pdf), "fields": fields, "report": report}
 
+    # Get list of signatures
+    fields = list_pdf_signatures(signed_pdf)
+    print(fields)
+
+    # Always use Root CA for verification instead of individual party certificates
+    # This is the correct approach for a PKI system
+    root_ca_path = Path("storage/ca/rootCA.pem")
+
+    try:
+        # Verify with Root CA and skip strict diff analysis for multi-signature PDFs
+        report = await verify_pdf_signed_async(signed_pdf, root_ca_path)
+    except Exception as e:
+        # If verification fails, return error details
+        report = {
+            "status": "FAILED",
+            "error": str(e),
+            "details": "Verification failed - possibly due to multi-signature policy conflicts"
+        }
+
+    return {"file": str(signed_pdf), "fields": fields, "report": report}
 
 def _html_to_pdf_bytes(html: str) -> bytes:
     """
